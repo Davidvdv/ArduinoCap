@@ -14,9 +14,9 @@
                 .user { position: relative; }
 				.user h2 { position: absolute; top: 10px; left: 80px; }
 				.user p.xp { position: absolute; bottom: 10px; left: 10px; color: #fff; font-size: 26px; }
-			.center { float: left; width: 60%; }
+			.center { float: left; width: 50%; }
 				#chart { width: 100%; height: 500px; }
-			.right { float: left; width: 20%; padding: 20px 0px 0px 0px; overflow: auto; height: 800px}
+			.right { float: left; width: 30%; padding: 20px 0px 0px 0px; overflow: auto; height: 400px}
 			
 		.clear { clear: both; }
 		
@@ -81,12 +81,31 @@
 
 	socket.on('viewAngleChanged', function(data) {
 		console.log(data);
-		$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+data+'</div>');
+		data = data.replace('\r', '');
+		var msg;
+		switch(data) {
+			case 'screen':
+				msg = ' kijkt naar zijn scherm.';
+			break;
+			case 'watching':
+				msg = ' luistert.';
+			break;
+			case 'left':
+				msg = ' kijkt naar links.';
+			break;
+			case 'straight':
+				msg = ' kijkt voor zich uit.';
+			break;
+			case 'right':
+				msg = ' kijkt naar rechts.';
+			break;
+		}
+		$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+msg+'</div>');
 	});
 
 	socket.on('soundChanged', function(data) {
-		if(data == 'talking') {
-			$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+' is aan het woord.</div>');
+		if(data == 'nottalking') {
+			$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+' is aan het woord geweest.</div>');
 		}
 	});
 
