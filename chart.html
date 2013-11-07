@@ -1,0 +1,605 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>Sound test</title>
+
+        <link rel="stylesheet" type="text/css" href="/css/result-light.css">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+
+        <style type='text/css'>
+            body {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                margin: auto;
+                position: relative;
+                font-weight: 300;
+            }
+
+            #pie-chart {
+                background-color: #ffffff;
+                /*border: 1px solid gray;*/
+                font: 10px sans-serif;
+                height: 400px;
+                text-shadow: none;
+                width: 650px;
+                margin-left: auto;
+                margin-right:auto;
+            }
+            #pie-chart .total{
+                font-size: 18px;
+                font-weight: bold;
+            }
+            #pie-chart .units{
+                fill: gray;
+                font-size: 12px;
+            }
+            #pie-chart .label{
+                fill: #CCC;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            #pie-chart .value{
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            #slider label {
+                position: absolute;
+                width: 20px;
+                margin-left: -20px;
+                text-align: center;
+                margin-top: 30px;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            }
+
+            #square1{
+                width:250px;
+                height:250px; 
+                background: #f00;
+                float: left;
+                margin-left: 50px;
+                text-align: center;
+            }
+
+            #square2{
+                width:250px;
+                height:250px; 
+                background: #f00;
+                float: left;
+                margin-left: 50px;
+                text-align: center;
+            }
+
+            #square3{
+                width:250px;
+                height:250px; 
+                background: #f00;
+                float: left;
+                margin-left: 50px;
+                text-align: center;
+            }
+
+        </style>
+
+
+
+        <script type='text/javascript'>//<![CDATA[ 
+            window.onload = function() {
+                var w = 650;
+                var h = 400;
+                var r = 150;
+                var ir = 75;
+                var textOffset = 24;
+                var tweenDuration = 1050;
+
+                //OBJECTS TO BE POPULATED WITH DATA LATER
+                var lines, valueLabels, nameLabels;
+                var pieData = [];
+                var oldPieData = [];
+                var filteredPieData = [];
+
+                //D3 helper function to populate pie slice parameters from array data
+                var donut = d3.layout.pie().value(function(d) {
+                    console.log(d);
+                    return d.xp;
+                    //return d.itemValue;
+                }).sort(null);
+
+                //D3 helper function to create colors from an ordinal scale
+                var color = d3.scale.category20c();
+
+                //D3 helper function to draw arcs, populates parameter "d" in path object
+                var arc = d3.svg.arc()
+                        .startAngle(function(d) {
+                    return d.startAngle;
+                })
+                        .endAngle(function(d) {
+                    return d.endAngle;
+                })
+                        .innerRadius(ir)
+                        .outerRadius(r);
+
+                var data;
+
+                var users = [
+                    {rfid: '3400978DB997', name: "David", xp: 30, color: 'FF2653', joined: false},
+                    {rfid: '3400A141D602', name: "Jef", xp: 30, color: '3DDA71', joined: false},
+                    {rfid: '3400888D4E7F', name: "Randy", xp: 40, color: '50C9F7', joined: false}
+                ];
+
+                var iosocket = io.connect();
+
+                iosocket.on('connect', function() {
+                    $('#incomingChatMessages').append($('<li>Connected</li>'));
+
+                    iosocket.on('message', function(message) {
+                        var bericht = message.replace('\r', '');
+                        console.log(message);
+
+                        if (bericht.toString() === '1talking') {
+                            $("#square1").css("background-color", "green");
+                            users[0].xp = users[0].xp + 10;
+                            console.log(users[0].xp);
+                            update();
+                        } else if (bericht.toString() === '2talking') {
+                            $("#square2").css("background-color", "green");
+                        } else if (bericht.toString() === '1nottalking') {
+                            $("#square1").css("background-color", "red");
+                        } else if (bericht.toString() === '2nottalking') {
+                            $("#square2").css("background-color", "red");
+                        }
+                    });
+                    iosocket.on('disconnect', function() {
+                        $('#incomingChatMessages').append('<li>Disconnected</li>');
+                    });
+                });
+
+                var vis = d3.select("#pie-chart").append("svg:svg")
+                        .attr("width", w)
+                        .attr("height", h);
+
+                //GROUP FOR ARCS/PATHS
+                var arc_group = vis.append("svg:g")
+                        .attr("class", "arc")
+                        .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
+
+                //GROUP FOR LABELS
+                var label_group = vis.append("svg:g")
+                        .attr("class", "label_group")
+                        .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
+
+                //GROUP FOR CENTER TEXT  
+                var center_group = vis.append("svg:g")
+                        .attr("class", "center_group")
+                        .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
+
+                var whiteCircle = center_group.append("svg:circle")
+                        .attr("fill", "white")
+                        .attr("r", ir);
+
+                function update() {
+
+                    data = users;
+
+                    oldPieData = filteredPieData;
+                    pieData = donut(data);
+
+                    var sliceProportion = 0; //size of this slice
+                    filteredPieData = pieData.filter(filterData);
+                    function filterData(element, index, array) {
+                        element.name = users[index].name;
+                        element.value = users[index].xp;
+
+                        sliceProportion += element.value;
+                        return (element.value > 0);
+                    }
+
+                    //DRAW ARC PATHS
+                    paths = arc_group.selectAll("path").data(filteredPieData);
+                    paths.enter().append("svg:path")
+                            .attr("stroke", "white")
+                            .attr("stroke-width", 0.5)
+                            .attr("fill", function(d, i) {
+                        return color(i);
+                    })
+                            .transition()
+                            .duration(tweenDuration)
+                            .attrTween("d", pieTween);
+                    paths
+                            .transition()
+                            .duration(tweenDuration)
+                            .attrTween("d", pieTween);
+                    paths.exit()
+                            .transition()
+                            .duration(tweenDuration)
+                            .attrTween("d", removePieTween)
+                            .remove();
+
+                    //DRAW TICK MARK LINES FOR LABELS
+                    lines = label_group.selectAll("line").data(filteredPieData);
+                    lines.enter().append("svg:line")
+                            .attr("x1", 0)
+                            .attr("x2", 0)
+                            .attr("y1", -r - 3)
+                            .attr("y2", -r - 15)
+                            .attr("stroke", "gray")
+                            .attr("transform", function(d) {
+                        return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")";
+                    });
+                    lines.transition()
+                            .duration(tweenDuration)
+                            .attr("transform", function(d) {
+                        return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")";
+                    });
+                    lines.exit().remove();
+
+                    //DRAW LABELS WITH PERCENTAGE VALUES
+                    valueLabels = label_group.selectAll("text.value").data(filteredPieData)
+                            .attr("dy", function(d) {
+                        if ((d.startAngle + d.endAngle) / 2 > Math.PI / 2 && (d.startAngle + d.endAngle) / 2 < Math.PI * 1.5) {
+                            return 5;
+                        } else {
+                            return -7;
+                        }
+                    })
+                            .attr("text-anchor", function(d) {
+                        if ((d.startAngle + d.endAngle) / 2 < Math.PI) {
+                            return "beginning";
+                        } else {
+                            return "end";
+                        }
+                    })
+                            .text(function(d) {
+                        var percentage = (d.value / sliceProportion) * 100;
+                        return percentage.toFixed(1) + "%";
+                    });
+
+                    valueLabels.enter().append("svg:text")
+                            .attr("class", "value")
+                            .attr("transform", function(d) {
+                        return "translate(" + Math.cos(((d.startAngle + d.endAngle - Math.PI) / 2)) * (r + textOffset) + "," + Math.sin((d.startAngle + d.endAngle - Math.PI) / 2) * (r + textOffset) + ")";
+                    })
+                            .attr("dy", function(d) {
+                        if ((d.startAngle + d.endAngle) / 2 > Math.PI / 2 && (d.startAngle + d.endAngle) / 2 < Math.PI * 1.5) {
+                            return 5;
+                        } else {
+                            return -7;
+                        }
+                    })
+                            .attr("text-anchor", function(d) {
+                        if ((d.startAngle + d.endAngle) / 2 < Math.PI) {
+                            return "beginning";
+                        } else {
+                            return "end";
+                        }
+                    }).text(function(d) {
+                        var percentage = (d.value / sliceProportion) * 100;
+                        return percentage.toFixed(1) + "%";
+                    });
+
+                    valueLabels.transition().duration(tweenDuration).attrTween("transform", textTween);
+
+                    valueLabels.exit().remove();
+                }
+
+                function pieTween(d, i) {
+                    var s0;
+                    var e0;
+                    if (oldPieData[i]) {
+                        s0 = oldPieData[i].startAngle;
+                        e0 = oldPieData[i].endAngle;
+                    } else if (!(oldPieData[i]) && oldPieData[i - 1]) {
+                        s0 = oldPieData[i - 1].endAngle;
+                        e0 = oldPieData[i - 1].endAngle;
+                    } else if (!(oldPieData[i - 1]) && oldPieData.length > 0) {
+                        s0 = oldPieData[oldPieData.length - 1].endAngle;
+                        e0 = oldPieData[oldPieData.length - 1].endAngle;
+                    } else {
+                        s0 = 0;
+                        e0 = 0;
+                    }
+                    var i = d3.interpolate({startAngle: s0, endAngle: e0}, {startAngle: d.startAngle, endAngle: d.endAngle});
+                    return function(t) {
+                        var b = i(t);
+                        return arc(b);
+                    };
+                }
+
+                function removePieTween(d, i) {
+                    s0 = 2 * Math.PI;
+                    e0 = 2 * Math.PI;
+                    var i = d3.interpolate({startAngle: d.startAngle, endAngle: d.endAngle}, {startAngle: s0, endAngle: e0});
+                    return function(t) {
+                        var b = i(t);
+                        return arc(b);
+                    };
+                }
+
+                function textTween(d, i) {
+                    var a;
+                    if (oldPieData[i]) {
+                        a = (oldPieData[i].startAngle + oldPieData[i].endAngle - Math.PI) / 2;
+                    } else if (!(oldPieData[i]) && oldPieData[i - 1]) {
+                        a = (oldPieData[i - 1].startAngle + oldPieData[i - 1].endAngle - Math.PI) / 2;
+                    } else if (!(oldPieData[i - 1]) && oldPieData.length > 0) {
+                        a = (oldPieData[oldPieData.length - 1].startAngle + oldPieData[oldPieData.length - 1].endAngle - Math.PI) / 2;
+                    } else {
+                        a = 0;
+                    }
+                    var b = (d.startAngle + d.endAngle - Math.PI) / 2;
+
+                    var fn = d3.interpolateNumber(a, b);
+                    return function(t) {
+                        var val = fn(t);
+                        return "translate(" + Math.cos(val) * (r + textOffset) + "," + Math.sin(val) * (r + textOffset) + ")";
+                    };
+                }
+
+                var z = 0;
+
+                $("#updatebutton").click(function()
+                {
+                    z++;
+
+                    update();
+                }
+                );
+
+                update(0);
+            }//]]>  
+
+        </script>
+
+
+    </head>
+    <body>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+        <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+        <div id="pie-chart"></div>
+
+        <div id="squares">
+
+            <div id="square1">
+                Jef
+            </div>
+
+            <div id="square2">
+                David
+            </div>
+
+            <div id="square3">
+                Randy
+            </div>
+
+        </div>
+
+    </body>
+
+
+</html>
+
+
+
+
+
+// <editor-fold defaultstate="collapsed" desc="Backup code">
+    <!--<html>
+        <head>
+            <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+            <script src="/socket.io/socket.io.js"></script>
+            <script src="http://d3js.org/d3.v2.js"></script>
+            <script>
+                $(function() {
+                    var arr_old = [];
+                    var arr_new = [];
+                    var i = 0;
+                    var firstRun = true;
+    
+                    var users = [
+                        {rfid: '3400978DB997', name: "David", xp: 30, color: 'FF2653', joined: false},
+                        {rfid: '3400A141D602', name: "Jef", xp: 30, color: '3DDA71', joined: false},
+                        {rfid: '3400888D4E7F', name: "Randy", xp: 40, color: '50C9F7', joined: false}
+                    ];
+    
+                    var iosocket = io.connect();
+    
+                    iosocket.on('connect', function() {
+                        $('#incomingChatMessages').append($('<li>Connected</li>'));
+    
+                        iosocket.on('message', function(message) {
+                            //$('#incomingChatMessages').append($('<li></li>').text(message));
+                            var bericht = message.replace('\r', '');
+                            console.log(message);
+    
+                            if (bericht.toString() === 'talking') {
+                                $("#square1").css("background-color", "green");
+                                users[0].xp = users[0].xp + 10;
+                                console.log(users[0].xp);
+                                //console.log("Is now talking");
+                            } else if (bericht.toString() === '2 talking') {
+                                $("#square2").css("background-color", "green");
+                                //console.log("Is now talking");
+                            } else if (bericht.toString() === 'nottalking') {
+                                $("#square1").css("background-color", "red");
+                                //console.log("Is now talking");
+                            } else if (bericht.toString() === '2 nottalking') {
+                                $("#square2").css("background-color", "red");
+                                //console.log("Is now talking");
+                            }
+                        });
+                        iosocket.on('disconnect', function() {
+                            $('#incomingChatMessages').append('<li>Disconnected</li>');
+                        });
+                    });
+    
+                    $('#outgoingChatMessage').keypress(function(event) {
+                        if (event.which == 13) {
+                            event.preventDefault();
+                            iosocket.send($('#outgoingChatMessage').val());
+                            $('#incomingChatMessages').append($('<li></li>').text($('#outgoingChatMessage').val()));
+                            $('#outgoingChatMessage').val('');
+                        }
+                    });
+                    
+                    var innerRadius = 100;
+                    var outerRadius = 60;
+                    var width = 800;
+                    var height = 500;
+    
+                    var i = 0;
+    
+    
+                    var pie = d3.layout.pie()
+                            .sort(null);
+    
+                    var arc = d3.svg.arc()
+                            .innerRadius(innerRadius)
+                            .outerRadius(outerRadius);
+    
+                    var svg = d3.select("body").append("svg")
+                            .attr("width", width)
+                            .attr("height", height)
+                            .append("g")
+                            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+    
+                    var path = svg.selectAll("svg").data(pie([1, 1, 1]))
+                            .enter().append("path")
+                            .attr("fill", "white")
+                            .attr("d", arc)
+                            .each(function(d) {
+                        this._current = d;
+                    }); // store the initial values
+    
+                    $(svg).bind("monitor", {svg: svg, arc: arc, pie: pie}, worker);
+                    $(svg).trigger("monitor");
+    
+                    function worker(event) {
+                        var svg = event.data.svg;
+                        var arc = event.data.arc;
+                        var pie = event.data.pie;
+    
+                        var new_values = getUpdatedXP();
+    
+                        var xp_count = new_values;
+                        var jobs_colors = ["green", "cyan", "blue"];
+                        path = path.data(pie(xp_count))
+                                .attr("fill", function(d, i) {
+                            return jobs_colors[i]
+                        })
+                        path.transition().duration(1000).attrTween("d", arcTween); // redraw the arcs
+    
+                        setTimeout(function() {
+                            $(svg).trigger("monitor")
+                        }, 10000)
+                    }
+    
+                    // Store the displayed angles in _current.
+                    // Then, interpolate from _current to the new angles.
+                    // During the transition, _current is updated in-place by d3.interpolate.
+                    function arcTween(a) {
+                        var i = d3.interpolate(this._current, a);
+                        this._current = i(0);
+                        return function(t) {
+                            return arc(i(t));
+                        };
+                    }
+    
+                    function getUpdatedXP()
+                    {
+                        if (!firstRun) {
+                            var newValues = false;
+    
+                            for (var y = 0; y < 3; y++) {
+                                arr_new[y] = users[y].xp;
+                                //arr_new[y] = Math.floor(Math.random() * 10) + 1;
+                            }
+    
+                            i = 0;
+                            while (!newValues && i < arr_new.length) {
+                                i++;
+                                if (arr_old[i] !== arr_new[i]) {
+                                    newValues = true;
+                                    console.log("Updating graph");
+                                    return arr_new;
+                                }
+                            }
+                            arr_old = arr_new;
+                            newValues = false;
+                        } else {
+    //                        for (var y = 0; y < users.length; y++) {
+    //                            arr_new[y] = users[i].xp;
+    //                        }
+    
+                             for (var y = 0; y < 3; y++) {
+                                arr_new[y] = users[y].xp;
+                                //arr_new[y] = Math.floor(Math.random() * 10) + 1;
+                            }
+                            firstRun = false;
+                            return arr_new;
+                        }
+                    }
+                });
+            </script>
+            <style>
+    
+                #square1{
+                    width:250px;
+                    height:250px; 
+                    background: #f00;
+                    float: left;
+                    margin-left: 50px;
+                    text-align: center;
+                }
+    
+                #square2{
+                    width:250px;
+                    height:250px; 
+                    background: #f00;
+                    float: left;
+                    margin-left: 50px;
+                    text-align: center;
+                }
+    
+                #square3{
+                    width:250px;
+                    height:250px; 
+                    background: #f00;
+                    float: left;
+                    margin-left: 50px;
+                    text-align: center;
+                }
+    
+    
+    
+            </style>
+        </head>
+        <body>
+            Incoming Chat:&nbsp;<ul id="incomingChatMessages"></ul>
+    
+    
+            <input type="text" id="outgoingChatMessage">
+    
+            <div id="squares">
+    
+                <div id="square1">
+                    Jef
+                </div>
+    
+                <div id="square2">
+                    David
+                </div>
+    
+                <div id="square3">
+                    Randy
+                </div>
+    
+            </div>
+        </body>
+    </html>-->
+
+    // </editor-fold>

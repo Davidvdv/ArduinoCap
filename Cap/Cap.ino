@@ -802,6 +802,8 @@ int talking_new = 0;
 int low_threshold = 30;
 int high_threshold = 300;
 
+boolean printOnce = false;
+
 void setup() {      
   int error;
   uint8_t c;
@@ -992,13 +994,16 @@ int checkChange(){
   
   average = total / 10;   
   
-  if(average > 20){
+  if(average > 20 && !printOnce){
     Serial.println("#talking");
+    talking_new = 1;
+    printOnce = true;
+  }else if(average > 20){
     talking_new = 1;
   }else{
     Serial.println("#nottalking");
-    //Serial.println(average);
     talking_new = 0;
+    printOnce = false;
   }
 }
 double getSound(){
