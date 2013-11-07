@@ -16,7 +16,7 @@
 				.user p.xp { position: absolute; bottom: 15px; left: 35px; color: #fff; font-size: 26px; }
 			.center { float: left; width: 50%; }
 				#pie-chart { width: 100%; height: 500px; }
-			.right { float: left; width: 30%; padding: 20px 0px 0px 0px; overflow: auto; height: 400px}
+			.right { float: left; width: 30%; padding: 20px 0px 0px 0px; overflow: auto; height: 500px}
 			
 		.clear { clear: both; }
 		
@@ -53,9 +53,15 @@
 	var socket = io.connect('http://localhost');
 	
 	var users = [
-		{ rfid:'3400978DB997', name:"David", xp:10, color:'FF2653', joined: false, cap: { viewAngle: 'straight' } }, 
-		{ rfid:'3400A141D602', name:"Jef", xp:10, color:'3DDA71', joined: false, cap: { viewAngle: 'straight' } }, 
-		{ rfid:'3400888D4E7F', name:"Randy", xp:10, color:'50C9F7', joined: false, cap: { viewAngle: 'straight' } }
+		{ 	rfid:'3400978DB997', name:"David", xp:10, color:'FF2653', joined: false, 
+			cap: { viewAngle: 'straight', speaking: false } 
+		}, 
+		{ 	rfid:'3400A141D602', name:"Jef", xp:10, color:'3DDA71', joined: false, 
+			cap: { viewAngle: 'straight', speaking: false } 
+		}, 
+		{ 	rfid:'3400888D4E7F', name:"Randy", xp:10, color:'50C9F7', joined: false, 
+			cap: { viewAngle: 'straight', speaking: false } 
+		}
 	];
 
 	socket.on('rfid', function(rfid) {
@@ -78,18 +84,22 @@
 	
 	socket.on('cap1ViewAngleChanged', function(data) {
 		viewAngledChanged(data, users[0]);
+		watchCaps();
 	});
 
 	socket.on('cap1SoundChanged', function(data) {
 		soundChanged(data, users[0]);
+		watchCaps();
 	});
 
 	socket.on('cap2ViewAngleChanged', function(data) {
 		viewAngledChanged(data, users[1]);
+		watchCaps();
 	});
 
 	socket.on('cap2SoundChanged', function(data) {
 		soundChanged(data, users[1]);
+		watchCaps();
 	});
 
 	function viewAngledChanged(data, user) {
@@ -121,16 +131,35 @@
 			console.log(data);
 			if(data == 'nottalking') {
 				$('#log').prepend('<div><img src="images/hat-'+user.color+'.png" width="30" height="10" />'+user.name+' is aan het woord geweest.</div>');
-				updateUserXp(user);
-				calculateTotalXP();
-				updateChart();
+				updateUserXP(user, 10);
+				user.cap.speaking = false;
+			} else {
+				user.cap.speaking = true;
 			}
 		}
 	}
 
-	function updateUserXp(user) {
-		user.xp += 10;
+	function watchCaps() {
+		if(users[0].cap.viewAngle == 'left' && users[1].cap.viewAngle == 'right') {
+			console.log('kijken naar elkaar.');
+			if(users[0].cap.speaking) {
+				console.log('spreekt cap 2 aan.');
+				updateUserXP(users[0], 20);
+				updateUserXP(users[1], 10);
+			}
+			if(users[1].cap.speaking) {
+				console.log('spreekt cap 1 aan.');
+				updateUserXP(users[1], 20);
+				updateUserXP(users[0], 10);
+			}
+		}
+	}
+
+	function updateUserXP(user, points) {
+		user.xp += points;
 		$('#user-'+user.rfid+' .xp').html(user.xp);
+		updateChart();
+		calculateTotalXP();
 	}
 
 	function calculateTotalXP() {
@@ -144,7 +173,7 @@
 	}
 
     var w = 560;
-    var h = 400;
+    var h = 450;
     var r = 200;
     var ir = 50;
     var textOffset = 24;
