@@ -895,13 +895,13 @@ void loop() {
 //  boolean horizontalChanged = false;
 //  boolean verticalChanged = false;
   
-  if(angle_z < -30) {
+  if(angle_z < -40) {
     if(userHorizontalAngle != left) {
       Serial.println("left");
       //horizontalChanged = true;
     }
     userHorizontalAngle = left;
-  } else if(angle_z > 30 ) {
+  } else if(angle_z > 40 ) {
     if(userHorizontalAngle != right) {
       Serial.println("right");
       //horizontalChanged = true;
@@ -922,10 +922,6 @@ void loop() {
     }
     userVerticalAngle = screen;
   } else {
-    if(userVerticalAngle == screen) {
-      Serial.println("watching");
-      //verticalChanged = true;
-    }
     userVerticalAngle = watching;
   }
 

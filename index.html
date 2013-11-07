@@ -8,12 +8,12 @@
 		header { background-color: #333; padding: 10px 20px; margin-bottom: 30px;}
 		h1, h2, p, div { font-family: 'Open Sans', sans-serif; font-weight: 300; margin: 0px; color: #8E8E93; }
 	
-		#container { width: 100%; }
+		#container { width: 90%; margin: 0 auto; }
 			.left { float: left; width: 20%; padding: 20px 0px 0px 0px; }
 
                 .user { position: relative; }
-				.user h2 { position: absolute; top: 10px; left: 80px; }
-				.user p.xp { position: absolute; bottom: 10px; left: 10px; color: #fff; font-size: 26px; }
+				.user h2 { position: absolute; top: 10px; left: 100px; }
+				.user p.xp { position: absolute; bottom: 15px; left: 35px; color: #fff; font-size: 26px; }
 			.center { float: left; width: 50%; }
 				#chart { width: 100%; height: 500px; }
 			.right { float: left; width: 30%; padding: 20px 0px 0px 0px; overflow: auto; height: 400px}
@@ -26,15 +26,14 @@
 		.hat-50C9F7 { background: url('images/hat-50C9F7.png') no-repeat; }
 		.hat-FFCC38 { background: url('images/hat-FFCC38.png') no-repeat; }
 	</style>
-	<script src="https://www.google.com/jsapi"></script>
 	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 </head>
 <body>
 	<header>
 		<h1>Prototype - Samenwerkingsvisualisatie</h1>
 	</header>
-	<div id="container">
-		<div id="users" class="left">			
+	<div id="container">	
+		<div id="users" class="left">
 			<h2>&nbsp; Totaal: <span id="xp_total">0</span></h2>
 		</div>
 
@@ -43,8 +42,6 @@
 		</div>
 
 		<div id="log" class="right">
-			<ul>
-			</ul>
 		</div>
 
 		<div class="clear"></div>
@@ -54,17 +51,16 @@
 	<script src="/socket.io/socket.io.js"></script>
 	<script>
 	var socket = io.connect('http://localhost');
-
+	
 	var users = [
-		{ rfid:'3400978DB997', name:"David", xp:30, color:'FF2653', joined: false }, 
-		{ rfid:'3400A141D602', name:"Jef", xp:30, color:'3DDA71', joined: false }, 
-		{ rfid:'3400888D4E7F', name:"Randy", xp:40, color:'50C9F7', joined: false }
+		{ rfid:'3400978DB997', name:"David", xp:10, color:'FF2653', joined: false }, 
+		{ rfid:'3400A141D602', name:"Jef", xp:10, color:'3DDA71', joined: false }, 
+		{ rfid:'3400888D4E7F', name:"Randy", xp:10, color:'50C9F7', joined: false }
 	];
 
 	socket.on('rfid', function(rfid) {
 		var stripped = rfid.replace('\r', '').replace('\u0003', '').replace('\u0002', '');
 		for(var i in users) {
-			console.log(users[i].rfid);
 			if(users[i].rfid == stripped) {
 				if(users[i].joined == false) {
 					$('#users').prepend('<div id="user-'+users[i].rfid+'" class="user hat-'+users[i].color+'"><h2>'+users[i].name+'</h2><p class="xp">'+users[i].xp+'</p></div>');
@@ -73,76 +69,49 @@
 					$('#user-'+users[i].rfid).remove();
 					users[i].joined = false;
 				}
-				console.log(users[i]);
+				calculateTotalXP();
+			}
+		}
+	});
+	
+	socket.on('viewAngleChanged', function(data) {
+		if(users[0].joined) {
+			console.log(data);
+			data = data.replace('\r', '');
+			var msg;
+			switch(data) {
+				case 'screen':
+					msg = ' kijkt naar zijn scherm.';
+				break;
+				case 'left':
+					msg = ' kijkt naar links.';
+				break;
+				case 'straight':
+					msg = ' kijkt voor zich uit.';
+				break;
+				case 'right':
+					msg = ' kijkt naar rechts.';
+				break;
+			}
+			$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+msg+'</div>');
+		}
+	});
+
+	socket.on('soundChanged', function(data) {
+		if(users[0].joined) {
+			data = data.replace('\r', '');
+			console.log(data);
+			if(data == 'nottalking') {
+				$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+' is aan het woord geweest.</div>');
+				updateUserXp(users[0]);
 				calculateTotalXP();
 			}
 		}
 	});
 
-	socket.on('viewAngleChanged', function(data) {
-		console.log(data);
-		data = data.replace('\r', '');
-		var msg;
-		switch(data) {
-			case 'screen':
-				msg = ' kijkt naar zijn scherm.';
-			break;
-			case 'watching':
-				msg = ' luistert.';
-			break;
-			case 'left':
-				msg = ' kijkt naar links.';
-			break;
-			case 'straight':
-				msg = ' kijkt voor zich uit.';
-			break;
-			case 'right':
-				msg = ' kijkt naar rechts.';
-			break;
-		}
-		$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+msg+'</div>');
-	});
-
-	socket.on('soundChanged', function(data) {
-		if(data == 'nottalking') {
-			$('#log').prepend('<div><img src="images/hat-'+users[0].color+'.png" width="30" height="10" />'+users[0].name+' is aan het woord geweest.</div>');
-		}
-	});
-
-	google.load("visualization", "1", {packages:["corechart"]});
-	google.setOnLoadCallback(drawChart);
-
-	function drawChart() {
-
-		var data = new google.visualization.DataTable();
-		data.addColumn('string', 'Task');
-		data.addColumn('number', 'Hours per Day');
-		data.addRows(3);
-		
-		data.setValue(0, 0, 'David');
-		data.setValue(0, 1, 30);
-		
-		data.setValue(1, 0, 'Jef');
-		data.setValue(1, 1, 30);
-		
-		data.setValue(2, 0, 'Randy');
-		data.setValue(2, 1, 40);
-		
-		// Create and draw the visualization.
-		new google.visualization.PieChart(document.getElementById('chart')).draw(data, {
-		
-			title:"",
-			fontSize: "22",
-			legend: "none",
-			chartArea: { left: "2.5%", top: "2.5%", width: "95%", height: "95%"},
-			backgroundColor: { stroke: "#fff", strokeWidth: 5, fill: "#fff" },
-			pieSliceText: 'label',
-			tooltip : {trigger: 'none'},
-			pieHole: 0.2,
-			colors:['#FF2653','#3DDA71','#50C9F7','#FFCC38']
-			
-		});
-
+	function updateUserXp(user) {
+		user.xp += 10;
+		$('#user-'+user.rfid+' .xp').html(user.xp);
 	}
 
 	function calculateTotalXP() {

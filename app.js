@@ -28,7 +28,7 @@ io.sockets.on('connection', function(socket) {
 
 	cap.on('data', function(raw) {
 		if(raw.indexOf('#') == 0) {
-			raw.replace('#', '');
+			raw = raw.replace('#', '');
 			socket.emit('soundChanged', raw);
 		} else {
 			socket.emit('viewAngleChanged', raw);
