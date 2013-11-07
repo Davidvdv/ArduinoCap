@@ -39,6 +39,7 @@ io.sockets.on('connection', function(socket) {
 	});
 
 	cap2.on('data', function(raw) {
+		console.log('cap2');
 		if(raw.indexOf('#') == 0) {
 			raw = raw.replace('#', '');
 			socket.emit('cap2SoundChanged', raw);

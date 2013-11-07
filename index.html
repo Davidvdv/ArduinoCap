@@ -34,7 +34,7 @@
 	</header>
 	<div id="container">	
 		<div id="users" class="left">
-			<h2>&nbsp; Totaal: <span id="xp_total">0</span></h2>
+			<h2 id="xp_total"></h2>
 		</div>
 
 		<div class="center">
@@ -53,9 +53,9 @@
 	var socket = io.connect('http://localhost');
 	
 	var users = [
-		{ rfid:'3400978DB997', name:"David", xp:10, color:'FF2653', joined: false }, 
-		{ rfid:'3400A141D602', name:"Jef", xp:10, color:'3DDA71', joined: false }, 
-		{ rfid:'3400888D4E7F', name:"Randy", xp:10, color:'50C9F7', joined: false }
+		{ rfid:'3400978DB997', name:"David", xp:10, color:'FF2653', joined: false, cap: { viewAngle: 'straight' } }, 
+		{ rfid:'3400A141D602', name:"Jef", xp:10, color:'3DDA71', joined: false, cap: { viewAngle: 'straight' } }, 
+		{ rfid:'3400888D4E7F', name:"Randy", xp:10, color:'50C9F7', joined: false, cap: { viewAngle: 'straight' } }
 	];
 
 	socket.on('rfid', function(rfid) {
@@ -111,6 +111,7 @@
 				break;
 			}
 			$('#log').prepend('<div><img src="images/hat-'+user.color+'.png" width="30" height="10" />'+user.name+msg+'</div>');
+			user.cap.viewAngle = data;
 		}
 	}
 
@@ -139,13 +140,13 @@
 				XPtotal = XPtotal + users[i].xp;
 			}
 		}
-		$('#xp_total').html(XPtotal);
+		$('#xp_total').html('Totaal: '+XPtotal);
 	}
 
-    var w = 650;
+    var w = 560;
     var h = 400;
-    var r = 150;
-    var ir = 75;
+    var r = 200;
+    var ir = 50;
     var textOffset = 24;
     var tweenDuration = 1050;
 
