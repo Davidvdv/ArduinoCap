@@ -777,7 +777,7 @@ void calibrate_sensors() {
 }
 
 static String horizontalViewAngleToString(enum HorizontalViewAngle h) {
-  static const char *angles[] = {"left", "straight", "right"};
+  static const char *angles[] = {"fullLeft", "left", "straight", "right", "fullRight"};
   return angles[h];
 }
 static String verticalViewAngleToString(enum VerticalViewAngle v) {
@@ -891,25 +891,30 @@ void loop() {
   float angle_y = alpha*gyro_angle_y + (1.0 - alpha)*accel_angle_y;
   float angle_z = gyro_angle_z;  //Accelerometer doesn't give z-angle
 
-//  boolean horizontalChanged = false;
-//  boolean verticalChanged = false;
-  
-  if(angle_z < -40) {
+  if(angle_z < -70) {
+    if(userHorizontalAngle != fullLeft) {
+      Serial.println("fullLeft");
+    }
+    userHorizontalAngle = fullLeft;
+  }
+  else if(angle_z < -40) {
     if(userHorizontalAngle != left) {
       Serial.println("left");
-      //horizontalChanged = true;
     }
     userHorizontalAngle = left;
+  } else if(angle_z > 70) {
+    if(userHorizontalAngle != fullRight) {
+      Serial.println("fullRight");
+    }
+    userHorizontalAngle = fullRight;
   } else if(angle_z > 40 ) {
     if(userHorizontalAngle != right) {
       Serial.println("right");
-      //horizontalChanged = true;
     }
     userHorizontalAngle = right;
   } else {
     if(userHorizontalAngle != straight) {
       Serial.println("straight");
-      //horizontalChanged = true;
     }
     userHorizontalAngle = straight;
   }
@@ -917,7 +922,6 @@ void loop() {
   if(gyro_angle_x > 15) {
     if(userVerticalAngle != screen) {
       Serial.println("screen");
-      //verticalChanged = true;
     }
     userVerticalAngle = screen;
   } else {
@@ -933,32 +937,13 @@ void loop() {
   getSound();
     
     if(filtered_volt > low_threshold && volts > low_threshold && volts < high_threshold){
-//      Serial.println();
-//      Serial.print("Value: ");
-//      Serial.print(volts);
-//      Serial.print(" Filtered: ");
-//      //Serial.print(update(volts));
-//      Serial.print(filtered_volt);
       talking_new = 1;
     }else{
      talking_new = 0;
     }
     
-    //Geen verandering
-    if(talking_old == talking_new){
-      if(talking_new == 1){
-      //Serial.println("No change - Talking");
-      }else{
-        //Serial.println("No change - Not talking");
-      }
-    }
     //Verandering
-    else if(talking_old != talking_new){
-//      if(talking_new == 1){
-//      Serial.println("Change - Talking");
-//      }else{        
-//        Serial.println("Change - Not talking");
-//      }    
+    if(talking_old != talking_new){    
       checkChange();
     }
 

@@ -1,7 +1,9 @@
 enum HorizontalViewAngle {
+  fullLeft,
   left,
   straight,
-  right
+  right,
+  fullRight
 };
 enum VerticalViewAngle {
   screen,
