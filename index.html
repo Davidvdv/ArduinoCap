@@ -1,387 +1,395 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>Prototype - Samenwerkingsvisualisatie</title>
-	<link href="http://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet">
-	<style>
-		body { margin: 0px; }
-		header { background-color: #333; padding: 10px 20px; margin-bottom: 30px;}
-		h1, h2, p, div { font-family: 'Open Sans', sans-serif; font-weight: 300; margin: 0px; color: #8E8E93; }
-	
-		#container { width: 90%; margin: 0 auto; }
-			.left { float: left; width: 20%; padding: 20px 0px 0px 0px; }
+    <head>
+        <title>Prototype - Samenwerkingsvisualisatie</title>
+        <link href="http://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet">
+        <style>
+            body { margin: 0px; }
+            header { background-color: #333; padding: 10px 20px; margin-bottom: 30px;}
+            h1, h2, p, div { font-family: 'Open Sans', sans-serif; font-weight: 300; margin: 0px; color: #8E8E93; }
 
-                .user { position: relative; }
-				.user h2 { position: absolute; top: 10px; left: 100px; }
-				.user p.xp { position: absolute; bottom: 15px; left: 35px; color: #fff; font-size: 26px; }
-			.center { float: left; width: 50%; }
-				#pie-chart { width: 100%; height: 500px; }
-			.right { float: left; width: 30%; padding: 20px 0px 0px 0px; overflow: auto; height: 500px}
-			
-		.clear { clear: both; }
-		
-		.user { width: 200px; height: 60px; margin: 0px 0px 20px 0px;  }
-		.hat-FF2653 { background: url('images/hat-FF2653.png') no-repeat; }
-		.hat-3DDA71 { background: url('images/hat-3DDA71.png') no-repeat; }
-		.hat-50C9F7 { background: url('images/hat-50C9F7.png') no-repeat; }
-		.hat-FFCC38 { background: url('images/hat-FFCC38.png') no-repeat; }
-	</style>
-	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-</head>
-<body>
-	<header>
-		<h1>Prototype - Samenwerkingsvisualisatie</h1>
-	</header>
-	<div id="container">	
-		<div id="users" class="left">
-			<h2 id="xp_total"></h2>
-		</div>
+            #container { width: 90%; margin: 0 auto; }
+            .left { float: left; width: 20%; padding: 20px 0px 0px 0px; }
 
-		<div class="center">
-			<div id="pie-chart"></div>
-		</div>
+            .user { position: relative; }
+            .user h2 { position: absolute; top: 10px; left: 100px; }
+            .user p.xp { position: absolute; bottom: 15px; left: 35px; color: #fff; font-size: 26px; }
+            .center { float: left; width: 50%; }
+            #pie-chart { width: 100%; height: 500px; }
+            .right { float: left; width: 30%; padding: 20px 0px 0px 0px; overflow: auto; height: 500px}
 
-		<div id="log" class="right">
-		</div>
+            .clear { clear: both; }
 
-		<div class="clear"></div>
+            .user { width: 200px; height: 60px; margin: 0px 0px 20px 0px;  }
+            .hat-FF2653 { background: url('images/hat-FF2653.png') no-repeat; }
+            .hat-3DDA71 { background: url('images/hat-3DDA71.png') no-repeat; }
+            .hat-50C9F7 { background: url('images/hat-50C9F7.png') no-repeat; }
+            .hat-FFCC38 { background: url('images/hat-FFCC38.png') no-repeat; }
+        </style>
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    </head>
+    <body>
+        <header>
+            <h1>Prototype - Samenwerkingsvisualisatie</h1>
+        </header>
+        <div id="container">	
+            <div id="users" class="left">
+                <h2 id="xp_total"></h2>
+            </div>
 
-	</div>
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-	<script src="/socket.io/socket.io.js"></script>
-	<script>
-	var socket = io.connect('http://localhost');
-	
-	var users = [
-		{ 	rfid:'3400978DB997', name:"David", xp:10, color:'FF2653', joined: false, 
-			cap: { viewAngle: 'straight', speaking: false } 
-		}, 
-		{ 	rfid:'3400A141D602', name:"Jef", xp:10, color:'3DDA71', joined: false, 
-			cap: { viewAngle: 'straight', speaking: false } 
-		}, 
-		{ 	rfid:'3400888D4E7F', name:"Randy", xp:10, color:'50C9F7', joined: false, 
-			cap: { viewAngle: 'straight', speaking: false } 
-		}
-	];
+            <div class="center">
+                <div id="pie-chart"></div>
+            </div>
 
-	socket.on('rfid', function(rfid) {
-		var stripped = rfid.replace('\r', '').replace('\u0003', '').replace('\u0002', '');
-		for(var i in users) {
-			if(users[i].rfid == stripped) {
-				if(users[i].joined == false) {
-					$('#users').prepend('<div id="user-'+users[i].rfid+'" class="user hat-'+users[i].color+'"><h2>'+users[i].name+'</h2><p class="xp">'+users[i].xp+'</p></div>');
-					users[i].joined = true;
-					updateChart();
-				} else {
-					$('#user-'+users[i].rfid).remove();
-					users[i].joined = false;
-					updateChart();
-				}
-				calculateTotalXP();
-			}
-		}
-	});
-	
-	socket.on('cap1ViewAngleChanged', function(data) {
-		viewAngledChanged(data, users[0]);
-		watchCaps();
-	});
+            <div id="log" class="right">
+            </div>
 
-	socket.on('cap1SoundChanged', function(data) {
-		soundChanged(data, users[0]);
-		watchCaps();
-	});
+            <div class="clear"></div>
 
-	socket.on('cap2ViewAngleChanged', function(data) {
-		viewAngledChanged(data, users[1]);
-		watchCaps();
-	});
+        </div>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            var socket = io.connect('http://localhost');
 
-	socket.on('cap2SoundChanged', function(data) {
-		soundChanged(data, users[1]);
-		watchCaps();
-	});
+            var users = [
+                {rfid: '3400978DB997', name: "David", xp: 10, color: 'FF2653', joined: false,
+                    cap: {viewAngle: 'straight', speaking: false}
+                },
+                {rfid: '3400A141D602', name: "Jef", xp: 10, color: '3DDA71', joined: false,
+                    cap: {viewAngle: 'straight', speaking: false}
+                },
+                {rfid: '3400888D4E7F', name: "Randy", xp: 10, color: '50C9F7', joined: false,
+                    cap: {viewAngle: 'straight', speaking: false}
+                }
+            ];
 
-	function viewAngledChanged(data, user) {
-		if(user.joined) {
-			data = data.replace('\r', '');
-			var msg;
-			switch(data) {
-				case 'screen':
-					msg = ' kijkt naar zijn scherm.';
-				break;
-				case 'left':
-					msg = ' kijkt naar links.';
-				break;
-				case 'straight':
-					msg = ' kijkt voor zich uit.';
-				break;
-				case 'right':
-					msg = ' kijkt naar rechts.';
-				break;
-			}
-			$('#log').prepend('<div><img src="images/hat-'+user.color+'.png" width="30" height="10" />'+user.name+msg+'</div>');
-			user.cap.viewAngle = data;
-		}
-	}
+            var userJoined = "";
 
-	function soundChanged(data, user) {
-		if(user.joined) {
-			data = data.replace('\r', '');
-			console.log(data);
-			if(data == 'nottalking') {
-				$('#log').prepend('<div><img src="images/hat-'+user.color+'.png" width="30" height="10" />'+user.name+' is aan het woord geweest.</div>');
-				updateUserXP(user, 10);
-				user.cap.speaking = false;
-			} else {
-				user.cap.speaking = true;
-			}
-		}
-	}
+            socket.on('rfid', function(rfid) {
+                var stripped = rfid.replace('\r', '').replace('\u0003', '').replace('\u0002', '');
+                for (var i in users) {
+                    if (users[i].rfid == stripped) {
+                        if (users[i].joined == false) {
+                            userJoined = users[i].rfid;
+                            $('#users').prepend('<div id="user-' + users[i].rfid + '" class="user hat-' + users[i].color + '"><h2>' + users[i].name + '</h2><p class="xp">' + users[i].xp + '</p></div>');
+                            users[i].joined = true;
+                            updateChart();
+                        } else {
+                            $('#user-' + users[i].rfid).remove();
+                            users[i].joined = false;
+                            updateChart();
+                        }
+                        calculateTotalXP();
+                    }
+                }
+            });
 
-	function watchCaps() {
-		if(users[0].cap.viewAngle == 'left' && users[1].cap.viewAngle == 'right') {
-			console.log('kijken naar elkaar.');
-			if(users[0].cap.speaking) {
-				console.log('spreekt cap 2 aan.');
-				updateUserXP(users[0], 20);
-				updateUserXP(users[1], 10);
-			}
-			if(users[1].cap.speaking) {
-				console.log('spreekt cap 1 aan.');
-				updateUserXP(users[1], 20);
-				updateUserXP(users[0], 10);
-			}
-		}
-	}
+            socket.on('cap1ViewAngleChanged', function(data) {
+                viewAngledChanged(data, users[0]);
+                watchCaps();
+            });
 
-	function updateUserXP(user, points) {
-		user.xp += points;
-		$('#user-'+user.rfid+' .xp').html(user.xp);
-		updateChart();
-		calculateTotalXP();
-	}
+            socket.on('cap1SoundChanged', function(data) {
+                soundChanged(data, users[0]);
+                watchCaps();
+            });
 
-	function calculateTotalXP() {
-		var XPtotal = 0;
-		for(var i in users) {
-			if(users[i].joined == true) {
-				XPtotal = XPtotal + users[i].xp;
-			}
-		}
-		$('#xp_total').html('Totaal: '+XPtotal);
-	}
+            socket.on('cap2ViewAngleChanged', function(data) {
+                viewAngledChanged(data, users[1]);
+                watchCaps();
+            });
 
-    var w = 560;
-    var h = 450;
-    var r = 200;
-    var ir = 50;
-    var textOffset = 24;
-    var tweenDuration = 1050;
+            socket.on('cap2SoundChanged', function(data) {
+                soundChanged(data, users[1]);
+                watchCaps();
+            });
 
-    //OBJECTS TO BE POPULATED WITH DATA LATER
-    var lines, valueLabels, nameLabels;
-    var pieData = [];
-    var oldPieData = [];
-    var filteredPieData = [];
-
-    //D3 helper function to populate pie slice parameters from array data
-    var donut = d3.layout.pie().value(function(d) {
-    	return (d.joined) ? d.xp : null;
-    }).sort(null);
-
-    //D3 helper function to draw arcs, populates parameter "d" in path object
-    var arc = d3.svg.arc()
-            .startAngle(function(d) {
-        return d.startAngle;
-    })
-            .endAngle(function(d) {
-        return d.endAngle;
-    })
-            .innerRadius(ir)
-            .outerRadius(r);
-
-    var vis = d3.select("#pie-chart").append("svg:svg")
-            .attr("width", w)
-            .attr("height", h);
-
-    //GROUP FOR ARCS/PATHS
-    var arc_group = vis.append("svg:g")
-            .attr("class", "arc")
-            .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
-
-    //GROUP FOR LABELS
-    var label_group = vis.append("svg:g")
-            .attr("class", "label_group")
-            .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
-
-    //GROUP FOR CENTER TEXT  
-    var center_group = vis.append("svg:g")
-            .attr("class", "center_group")
-            .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
-
-    var whiteCircle = center_group.append("svg:circle")
-            .attr("fill", "white")
-            .attr("r", ir);
-
-    function updateChart() {
-        oldPieData = filteredPieData;
-        pieData = donut(users);
-        
-        var sliceProportion = 0; //size of this slice
-        filteredPieData = pieData.filter(filterData);
-        function filterData(element, index, array) {
-            if(users[index].joined == true) {
-                element.name = users[index].name;
-                element.value = users[index].xp;
-
-                sliceProportion += element.value;
-            	return (element.value > 0);
+            function viewAngledChanged(data, user) {
+                if (user.joined) {
+                    data = data.replace('\r', '');
+                    var msg;
+                    switch (data) {
+                        case 'screen':
+                            msg = ' kijkt naar zijn scherm.';
+                            break;
+                        case 'left':
+                            msg = ' kijkt naar links.';
+                            break;
+                        case 'straight':
+                            msg = ' kijkt voor zich uit.';
+                            break;
+                        case 'right':
+                            msg = ' kijkt naar rechts.';
+                            break;
+                    }
+                    $('#log').prepend('<div><img src="images/hat-' + user.color + '.png" width="30" height="10" />' + user.name + msg + '</div>');
+                    user.cap.viewAngle = data;
+                }
             }
-        }
 
-        //DRAW ARC PATHS
-        paths = arc_group.selectAll("path").data(filteredPieData);
-        paths.enter().append("svg:path")
-                .attr("stroke", "white")
-                .attr("stroke-width", 0.5)
-                .attr("fill", function(d, i) {
-            return '#'+users[i].color;
-        })
-                .transition()
-                .duration(tweenDuration)
-                .attrTween("d", pieTween);
-        paths
-                .transition()
-                .duration(tweenDuration)
-                .attrTween("d", pieTween);
-        paths.exit()
-                .transition()
-                .duration(tweenDuration)
-                .attrTween("d", removePieTween)
-                .remove();
-
-        //DRAW TICK MARK LINES FOR LABELS
-        lines = label_group.selectAll("line").data(filteredPieData);
-        lines.enter().append("svg:line")
-                .attr("x1", 0)
-                .attr("x2", 0)
-                .attr("y1", -r - 3)
-                .attr("y2", -r - 15)
-                .attr("stroke", "gray")
-                .attr("transform", function(d) {
-            return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")";
-        });
-        lines.transition()
-                .duration(tweenDuration)
-                .attr("transform", function(d) {
-            return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")";
-        });
-        lines.exit().remove();
-
-        //DRAW LABELS WITH PERCENTAGE VALUES
-        valueLabels = label_group.selectAll("text.value").data(filteredPieData)
-                .attr("dy", function(d) {
-            if ((d.startAngle + d.endAngle) / 2 > Math.PI / 2 && (d.startAngle + d.endAngle) / 2 < Math.PI * 1.5) {
-                return 5;
-            } else {
-                return -7;
+            function soundChanged(data, user) {
+                if (user.joined) {
+                    data = data.replace('\r', '');
+                    console.log(data);
+                    if (data == 'nottalking') {
+                        $('#log').prepend('<div><img src="images/hat-' + user.color + '.png" width="30" height="10" />' + user.name + ' is aan het woord geweest.</div>');
+                        updateUserXP(user, 10);
+                        user.cap.speaking = false;
+                    } else {
+                        user.cap.speaking = true;
+                    }
+                }
             }
-        })
-                .attr("text-anchor", function(d) {
-            if ((d.startAngle + d.endAngle) / 2 < Math.PI) {
-                return "beginning";
-            } else {
-                return "end";
+
+            function watchCaps() {
+                if (users[0].cap.viewAngle == 'left' && users[1].cap.viewAngle == 'right') {
+                    console.log('kijken naar elkaar.');
+                    if (users[0].cap.speaking) {
+                        console.log('spreekt cap 2 aan.');
+                        updateUserXP(users[0], 20);
+                        updateUserXP(users[1], 10);
+                    }
+                    if (users[1].cap.speaking) {
+                        console.log('spreekt cap 1 aan.');
+                        updateUserXP(users[1], 20);
+                        updateUserXP(users[0], 10);
+                    }
+                }
             }
-        })
-                .text(function(d) {
-            var percentage = (d.value / sliceProportion) * 100;
-            return percentage.toFixed(1) + "%";
-        });
 
-        valueLabels.enter().append("svg:text")
-                .attr("class", "value")
-                .attr("transform", function(d) {
-            return "translate(" + Math.cos(((d.startAngle + d.endAngle - Math.PI) / 2)) * (r + textOffset) + "," + Math.sin((d.startAngle + d.endAngle - Math.PI) / 2) * (r + textOffset) + ")";
-        })
-                .attr("dy", function(d) {
-            if ((d.startAngle + d.endAngle) / 2 > Math.PI / 2 && (d.startAngle + d.endAngle) / 2 < Math.PI * 1.5) {
-                return 5;
-            } else {
-                return -7;
+            function updateUserXP(user, points) {
+                user.xp += points;
+                $('#user-' + user.rfid + ' .xp').html(user.xp);
+                updateChart();
+                calculateTotalXP();
             }
-        })
-                .attr("text-anchor", function(d) {
-            if ((d.startAngle + d.endAngle) / 2 < Math.PI) {
-                return "beginning";
-            } else {
-                return "end";
+
+            function calculateTotalXP() {
+                var XPtotal = 0;
+                for (var i in users) {
+                    if (users[i].joined == true) {
+                        XPtotal = XPtotal + users[i].xp;
+                    }
+                }
+                $('#xp_total').html('Totaal: ' + XPtotal);
             }
-        }).text(function(d) {
-            var percentage = (d.value / sliceProportion) * 100;
-            return percentage.toFixed(1) + "%";
-        });
 
-        valueLabels.transition().duration(tweenDuration).attrTween("transform", textTween);
+            var w = 560;
+            var h = 450;
+            var r = 200;
+            var ir = 50;
+            var textOffset = 24;
+            var tweenDuration = 1050;
 
-        valueLabels.exit().remove();
-    }
+            //OBJECTS TO BE POPULATED WITH DATA LATER
+            var lines, valueLabels, nameLabels;
+            var pieData = [];
+            var oldPieData = [];
+            var filteredPieData = [];
 
-    function pieTween(d, i) {
-        var s0;
-        var e0;
-        if (oldPieData[i]) {
-            s0 = oldPieData[i].startAngle;
-            e0 = oldPieData[i].endAngle;
-        } else if (!(oldPieData[i]) && oldPieData[i - 1]) {
-            s0 = oldPieData[i - 1].endAngle;
-            e0 = oldPieData[i - 1].endAngle;
-        } else if (!(oldPieData[i - 1]) && oldPieData.length > 0) {
-            s0 = oldPieData[oldPieData.length - 1].endAngle;
-            e0 = oldPieData[oldPieData.length - 1].endAngle;
-        } else {
-            s0 = 0;
-            e0 = 0;
-        }
-        var i = d3.interpolate({startAngle: s0, endAngle: e0}, {startAngle: d.startAngle, endAngle: d.endAngle});
-        return function(t) {
-            var b = i(t);
-            return arc(b);
-        };
-    }
+            //D3 helper function to populate pie slice parameters from array data
+            var donut = d3.layout.pie().value(function(d) {
+                return (d.joined) ? d.xp : null;
+            }).sort(null);
 
-    function removePieTween(d, i) {
-        s0 = 2 * Math.PI;
-        e0 = 2 * Math.PI;
-        var i = d3.interpolate({startAngle: d.startAngle, endAngle: d.endAngle}, {startAngle: s0, endAngle: e0});
-        return function(t) {
-            var b = i(t);
-            return arc(b);
-        };
-    }
+            //D3 helper function to draw arcs, populates parameter "d" in path object
+            var arc = d3.svg.arc()
+                    .startAngle(function(d) {
+                return d.startAngle;
+            })
+                    .endAngle(function(d) {
+                return d.endAngle;
+            })
+                    .innerRadius(ir)
+                    .outerRadius(r);
 
-    function textTween(d, i) {
-        var a;
-        if (oldPieData[i]) {
-            a = (oldPieData[i].startAngle + oldPieData[i].endAngle - Math.PI) / 2;
-        } else if (!(oldPieData[i]) && oldPieData[i - 1]) {
-            a = (oldPieData[i - 1].startAngle + oldPieData[i - 1].endAngle - Math.PI) / 2;
-        } else if (!(oldPieData[i - 1]) && oldPieData.length > 0) {
-            a = (oldPieData[oldPieData.length - 1].startAngle + oldPieData[oldPieData.length - 1].endAngle - Math.PI) / 2;
-        } else {
-            a = 0;
-        }
-        var b = (d.startAngle + d.endAngle - Math.PI) / 2;
+            var vis = d3.select("#pie-chart").append("svg:svg")
+                    .attr("width", w)
+                    .attr("height", h);
 
-        var fn = d3.interpolateNumber(a, b);
-        return function(t) {
-            var val = fn(t);
-            return "translate(" + Math.cos(val) * (r + textOffset) + "," + Math.sin(val) * (r + textOffset) + ")";
-        };
-    }
+            //GROUP FOR ARCS/PATHS
+            var arc_group = vis.append("svg:g")
+                    .attr("class", "arc")
+                    .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
 
-    updateChart();
-	</script>
-</body>
+            //GROUP FOR LABELS
+            var label_group = vis.append("svg:g")
+                    .attr("class", "label_group")
+                    .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
+
+            //GROUP FOR CENTER TEXT  
+            var center_group = vis.append("svg:g")
+                    .attr("class", "center_group")
+                    .attr("transform", "translate(" + (w / 2) + "," + (h / 2) + ")");
+
+            var whiteCircle = center_group.append("svg:circle")
+                    .attr("fill", "white")
+                    .attr("r", ir);
+
+            function updateChart() {
+                oldPieData = filteredPieData;
+                pieData = donut(users);
+
+                var sliceProportion = 0; //size of this slice
+                filteredPieData = pieData.filter(filterData);
+                function filterData(element, index, array) {
+                    if (users[index].joined == true) {
+                        element.name = users[index].name;
+                        element.value = users[index].xp;
+
+                        sliceProportion += element.value;
+                        return (element.value > 0);
+                    }
+                }
+
+                //DRAW ARC PATHS
+                paths = arc_group.selectAll("path").data(filteredPieData);
+                paths.enter().append("svg:path")
+                        .attr("stroke", "white")
+                        .attr("stroke-width", 0.5)
+                        .attr("fill", function(d, i) {
+                    //return '#'+users[i].color;
+                    for (var n in users) {
+                        if (users[n].rfid === userJoined) {
+                            return "#" + users[n].color;
+                        }
+                    }
+                })
+                        .transition()
+                        .duration(tweenDuration)
+                        .attrTween("d", pieTween);
+                paths
+                        .transition()
+                        .duration(tweenDuration)
+                        .attrTween("d", pieTween);
+                paths.exit()
+                        .transition()
+                        .duration(tweenDuration)
+                        .attrTween("d", removePieTween)
+                        .remove();
+
+                //DRAW TICK MARK LINES FOR LABELS
+                lines = label_group.selectAll("line").data(filteredPieData);
+                lines.enter().append("svg:line")
+                        .attr("x1", 0)
+                        .attr("x2", 0)
+                        .attr("y1", -r - 3)
+                        .attr("y2", -r - 15)
+                        .attr("stroke", "gray")
+                        .attr("transform", function(d) {
+                    return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")";
+                });
+                lines.transition()
+                        .duration(tweenDuration)
+                        .attr("transform", function(d) {
+                    return "rotate(" + (d.startAngle + d.endAngle) / 2 * (180 / Math.PI) + ")";
+                });
+                lines.exit().remove();
+
+                //DRAW LABELS WITH PERCENTAGE VALUES
+                valueLabels = label_group.selectAll("text.value").data(filteredPieData)
+                        .attr("dy", function(d) {
+                    if ((d.startAngle + d.endAngle) / 2 > Math.PI / 2 && (d.startAngle + d.endAngle) / 2 < Math.PI * 1.5) {
+                        return 5;
+                    } else {
+                        return -7;
+                    }
+                })
+                        .attr("text-anchor", function(d) {
+                    if ((d.startAngle + d.endAngle) / 2 < Math.PI) {
+                        return "beginning";
+                    } else {
+                        return "end";
+                    }
+                })
+                        .text(function(d) {
+                    var percentage = (d.value / sliceProportion) * 100;
+                    return percentage.toFixed(1) + "%";
+                });
+
+                valueLabels.enter().append("svg:text")
+                        .attr("class", "value")
+                        .attr("transform", function(d) {
+                    return "translate(" + Math.cos(((d.startAngle + d.endAngle - Math.PI) / 2)) * (r + textOffset) + "," + Math.sin((d.startAngle + d.endAngle - Math.PI) / 2) * (r + textOffset) + ")";
+                })
+                        .attr("dy", function(d) {
+                    if ((d.startAngle + d.endAngle) / 2 > Math.PI / 2 && (d.startAngle + d.endAngle) / 2 < Math.PI * 1.5) {
+                        return 5;
+                    } else {
+                        return -7;
+                    }
+                })
+                        .attr("text-anchor", function(d) {
+                    if ((d.startAngle + d.endAngle) / 2 < Math.PI) {
+                        return "beginning";
+                    } else {
+                        return "end";
+                    }
+                }).text(function(d) {
+                    var percentage = (d.value / sliceProportion) * 100;
+                    return percentage.toFixed(1) + "%";
+                });
+
+                valueLabels.transition().duration(tweenDuration).attrTween("transform", textTween);
+
+                valueLabels.exit().remove();
+            }
+
+            function pieTween(d, i) {
+                var s0;
+                var e0;
+                if (oldPieData[i]) {
+                    s0 = oldPieData[i].startAngle;
+                    e0 = oldPieData[i].endAngle;
+                } else if (!(oldPieData[i]) && oldPieData[i - 1]) {
+                    s0 = oldPieData[i - 1].endAngle;
+                    e0 = oldPieData[i - 1].endAngle;
+                } else if (!(oldPieData[i - 1]) && oldPieData.length > 0) {
+                    s0 = oldPieData[oldPieData.length - 1].endAngle;
+                    e0 = oldPieData[oldPieData.length - 1].endAngle;
+                } else {
+                    s0 = 0;
+                    e0 = 0;
+                }
+                var i = d3.interpolate({startAngle: s0, endAngle: e0}, {startAngle: d.startAngle, endAngle: d.endAngle});
+                return function(t) {
+                    var b = i(t);
+                    return arc(b);
+                };
+            }
+
+            function removePieTween(d, i) {
+                s0 = 2 * Math.PI;
+                e0 = 2 * Math.PI;
+                var i = d3.interpolate({startAngle: d.startAngle, endAngle: d.endAngle}, {startAngle: s0, endAngle: e0});
+                return function(t) {
+                    var b = i(t);
+                    return arc(b);
+                };
+            }
+
+            function textTween(d, i) {
+                var a;
+                if (oldPieData[i]) {
+                    a = (oldPieData[i].startAngle + oldPieData[i].endAngle - Math.PI) / 2;
+                } else if (!(oldPieData[i]) && oldPieData[i - 1]) {
+                    a = (oldPieData[i - 1].startAngle + oldPieData[i - 1].endAngle - Math.PI) / 2;
+                } else if (!(oldPieData[i - 1]) && oldPieData.length > 0) {
+                    a = (oldPieData[oldPieData.length - 1].startAngle + oldPieData[oldPieData.length - 1].endAngle - Math.PI) / 2;
+                } else {
+                    a = 0;
+                }
+                var b = (d.startAngle + d.endAngle - Math.PI) / 2;
+
+                var fn = d3.interpolateNumber(a, b);
+                return function(t) {
+                    var val = fn(t);
+                    return "translate(" + Math.cos(val) * (r + textOffset) + "," + Math.sin(val) * (r + textOffset) + ")";
+                };
+            }
+
+            updateChart();
+        </script>
+    </body>
 </html>
