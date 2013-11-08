@@ -105,6 +105,16 @@
             watchCaps();
         });
 
+        socket.on('cap3ViewAngleChanged', function(data) {
+            viewAngledChanged(data, users[2]);
+            watchCaps();
+        });
+
+        socket.on('cap3SoundChanged', function(data) {
+            soundChanged(data, users[2]);
+            watchCaps();
+        });
+
         function viewAngledChanged(data, user) {
             if (user.joined) {
                 data = data.replace('\r', '');

@@ -22,6 +22,10 @@ var cap2 = new SerialPort("/dev/cu.usbmodem24141", {
 	baudrate: 19200, // Bautrate of de Arduino
 	parser: serialport.parsers.readline('\n')
 });
+var cap3 = new SerialPort("/dev/cu.usbmodem24121", { 
+	baudrate: 19200, // Bautrate of de Arduino
+	parser: serialport.parsers.readline('\n')
+});
 
 io.sockets.on('connection', function(socket) {
 	rfidReader.on('data', function(rfid) {
@@ -45,6 +49,15 @@ io.sockets.on('connection', function(socket) {
 			socket.emit('cap2SoundChanged', raw);
 		} else {
 			socket.emit('cap2ViewAngleChanged', raw);
+		}
+	});
+	cap3.on('data', function(raw) {
+		console.log('cap3');
+		if(raw.indexOf('#') == 0) {
+			raw = raw.replace('#', '');
+			socket.emit('cap3SoundChanged', raw);
+		} else {
+			socket.emit('cap3ViewAngleChanged', raw);
 		}
 	});
 });
