@@ -802,20 +802,14 @@ int talking_new = 0;
 int low_threshold = 30;
 int high_threshold = 300;
 
-boolean printOnce = false;
-
-
- unsigned long startMillis= millis();  // Start van de meting
- unsigned long stopMillis = startMillis + 50; // Want we willen 50 milisecs meten
- unsigned int signalMax = 0;
- unsigned int signalMin = 1024;
- unsigned int peakToPeak = 0;   // peak-to-peak level
- int i = 0;
- double total = 0;
- double value = 0;
-
- 
-
+unsigned long startMillis= millis();  // Start van de meting
+unsigned long stopMillis = startMillis + 50; // Want we willen 50 milisecs meten
+unsigned int signalMax = 0;
+unsigned int signalMin = 1024;
+unsigned int peakToPeak = 0;   // peak-to-peak level
+int i = 0;
+double total = 0;
+double value = 0;
 
 void setup() {      
   int error;
@@ -835,7 +829,6 @@ void setup() {
   //    Acceleration at 2g
   //    Clock source at internal 8MHz
   //    The device is in sleep mode.
-  //
 
   error = MPU6050_read (MPU6050_WHO_AM_I, &c, 1);
 
@@ -948,10 +941,7 @@ void loop() {
   
   talking_old = talking_new;
   unsigned int reads = 0;
- 
-  //getSound();
-  checkChange();
-    
+     
     if(filtered_volt > low_threshold && volts > low_threshold && volts < high_threshold){
       talking_new = 1;
     }else{
@@ -968,11 +958,6 @@ void loop() {
 }
 
 int checkChange(){
-    
-
-
-  //Serial.println(stopMillis);
-  //Serial.println(startMillis);
 
  if(millis() <= stopMillis) {
   
@@ -996,119 +981,41 @@ int checkChange(){
    volts = ((peakToPeak * 3.3) / 1024) * 1000;  // convert to volts
    filtered_volt = update(volts);
    
-     startMillis = millis();  // Start van de meting
-     stopMillis = startMillis + 50; // Want we willen 50 milisecs meten
-     signalMax = 0;
-     signalMin = 1024;
-     peakToPeak = 0;   // peak-to-peak level
-   
+   startMillis = millis();  // Start van de meting
+   stopMillis = startMillis + 50; // Want we willen 50 milisecs meten
+   signalMax = 0;
+   signalMin = 1024;
+   peakToPeak = 0;   // peak-to-peak level
 
-
-
-
-   
-   
-   
-   
    // Als het nog niet 10x is opgeslagen
    if(i<10){
+     
      total = total + filtered_volt;
      i++;
+     
    // Na 10x
    } else {
      
-     
-  
       average = total / 10;   
       total = 0;
       
-      
-           Serial.println(average);
+      Serial.println(average);
       
       if(average >= 20){
+        
         Serial.println("#talking");
         talking_new = 1;
-        //printOnce = true;
-      }else if(average < 20){
-        //talking_new = 1;
-      //}else{
+        
+      } else if(average < 20) {
+        
         Serial.println("#nottalking");
         talking_new = 0;
-        //printOnce = false;
-      }
-      
-      
-     
-      i = 0;
+  
+    }
+    i = 0;
    }
  }
- 
- 
- 
- 
- 
- 
- 
-
   
-  
-  
-
-
-
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-}
-double getSound(){
- unsigned long startMillis= millis();  // Start of sample window
- unsigned int peakToPeak = 0;   // peak-to-peak level
- unsigned int signalMax = 0;
- unsigned int signalMin = 1024;
-  
-  
-   // collect data for 50 mS
-   while (millis() - startMillis < sampleWindow) 
-   {
-      sample = analogRead(0);
-      if (sample < 1024)  // toss out spurious readings
-      {
-         if (sample > signalMax)
-         {
-            signalMax = sample;  // save just the max levels
-         }
-         else if (sample < signalMin)
-         {
-            signalMin = sample;  // save just the min levels
-         }
-      }
-   }
-   peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-   volts = ((peakToPeak * 3.3) / 1024) * 1000;  // convert to volts
-   filtered_volt = update(volts);
-   
-   return filtered_volt;
 }
 void measurementUpdate() {
  K = (P + Q) / (P + Q + R);
@@ -1211,9 +1118,9 @@ int MPU6050_write(int start, const uint8_t *pData, int size)
 //
 int MPU6050_write_reg(int reg, uint8_t data)
 {
+  
   int error;
-
   error = MPU6050_write(reg, &data, 1);
-
   return (error);
+  
 }
