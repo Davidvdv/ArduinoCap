@@ -811,7 +811,9 @@ boolean printOnce = false;
  unsigned int signalMin = 1024;
  unsigned int peakToPeak = 0;   // peak-to-peak level
  int i = 0;
- 
+ double total = 0;
+ double value = 0;
+
  
 
 
@@ -966,9 +968,6 @@ void loop() {
 }
 
 int checkChange(){
-  double total = 0;
-  double average = 0;
-  double value = 0;
     
 
 
@@ -1003,9 +1002,17 @@ int checkChange(){
      signalMin = 1024;
      peakToPeak = 0;   // peak-to-peak level
    
+
+
+
+
+   
+   
+   
+   
    // Als het nog niet 10x is opgeslagen
    if(i<10){
-     total = filtered_volt + total;
+     total = total + filtered_volt;
      i++;
    // Na 10x
    } else {
@@ -1013,17 +1020,21 @@ int checkChange(){
      
   
       average = total / 10;   
+      total = 0;
       
-      if(average > 20 && !printOnce){
+      
+           Serial.println(average);
+      
+      if(average >= 20){
         Serial.println("#talking");
         talking_new = 1;
-        printOnce = true;
-      }else if(average > 20){
-        talking_new = 1;
-      }else{
+        //printOnce = true;
+      }else if(average < 20){
+        //talking_new = 1;
+      //}else{
         Serial.println("#nottalking");
         talking_new = 0;
-        printOnce = false;
+        //printOnce = false;
       }
       
       
