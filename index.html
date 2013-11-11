@@ -59,7 +59,7 @@
             {rfid: '3400A141D602', name: "Jef", xp: 10, color: '3DDA71', joined: false,
                 cap: {viewAngle: 'straight', speaking: false}
             },
-            {rfid: '3400888D4E7F', name: "Randy", xp: 10, color: '50C9F7', joined: false,
+            {rfid: '3400897E1DDE', name: "Randy", xp: 10, color: '50C9F7', joined: false,
                 cap: {viewAngle: 'straight', speaking: false}
             }
         ];
@@ -165,11 +165,13 @@
                     console.log('spreekt cap 2 aan.');
                     updateUserXP(users[0], 20);
                     updateUserXP(users[1], 10);
+                    $('#log').prepend('<div><img src="images/hat-' + users[0].color + '.png" width="30" height="10" />' + users[0].name + ' spreekt met '+users[1].name+'</div>');
                 }
                 if (users[1].cap.speaking) {
                     console.log('spreekt cap 1 aan.');
                     updateUserXP(users[1], 20);
                     updateUserXP(users[0], 10);
+                    $('#log').prepend('<div><img src="images/hat-' + users[1].color + '.png" width="30" height="10" />' + users[1].name + ' spreekt met '+users[0].name+'</div>');
                 }
             }
             if (users[0].cap.viewAngle == 'left' && users[2].cap.viewAngle == 'left') {
@@ -178,25 +180,28 @@
                     console.log('spreekt cap 2 aan.');
                     updateUserXP(users[0], 20);
                     updateUserXP(users[1], 10);
+                    $('#log').prepend('<div><img src="images/hat-' + users[0].color + '.png" width="30" height="10" />' + users[0].name + ' spreekt met '+users[2].name+'</div>');
                 }
                 if (users[2].cap.speaking) {
                     console.log('spreekt cap 1 aan.');
                     updateUserXP(users[2], 20);
                     updateUserXP(users[0], 10);
+                    $('#log').prepend('<div><img src="images/hat-' + users[2].color + '.png" width="30" height="10" />' + users[2].name + ' spreekt met '+users[0].name+'</div>');
                 }
             }
-
             if (users[1].cap.viewAngle == 'right' && users[2].cap.viewAngle == 'right') {
                 console.log('kijken naar elkaar.');
                 if (users[1].cap.speaking) {
                     console.log('spreekt cap 3 aan.');
                     updateUserXP(users[1], 20);
                     updateUserXP(users[2], 10);
+                    $('#log').prepend('<div><img src="images/hat-' + users[1].color + '.png" width="30" height="10" />' + users[1].name + ' spreekt met '+users[2].name+'</div>');
                 }
                 if (users[2].cap.speaking) {
                     console.log('spreekt cap 2 aan.');
                     updateUserXP(users[2], 20);
                     updateUserXP(users[1], 10);
+                    $('#log').prepend('<div><img src="images/hat-' + users[2].color + '.png" width="30" height="10" />' + users[2].name + ' spreekt met '+users[1].name+'</div>');
                 }
             }
         }

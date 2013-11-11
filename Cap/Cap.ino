@@ -802,7 +802,7 @@ int talking_new = 0;
 int low_threshold = 30;
 int high_threshold = 300;
 
-unsigned long startMillis= millis();  // Start van de meting
+unsigned long startMillis = millis();  // Start van de meting
 unsigned long stopMillis = startMillis + 50; // Want we willen 50 milisecs meten
 unsigned int signalMax = 0;
 unsigned int signalMin = 1024;
@@ -810,6 +810,8 @@ unsigned int peakToPeak = 0;   // peak-to-peak level
 int i = 0;
 double total = 0;
 double value = 0;
+
+boolean used_to_talk = false;
 
 void setup() {      
   int error;
@@ -941,7 +943,9 @@ void loop() {
   
   talking_old = talking_new;
   unsigned int reads = 0;
-     
+  
+    checkChange();
+    
     if(filtered_volt > low_threshold && volts > low_threshold && volts < high_threshold){
       talking_new = 1;
     }else{
@@ -958,6 +962,8 @@ void loop() {
 }
 
 int checkChange(){
+ 
+  //Serial.println('checkChange');
 
  if(millis() <= stopMillis) {
   
@@ -987,6 +993,9 @@ int checkChange(){
    signalMin = 1024;
    peakToPeak = 0;   // peak-to-peak level
 
+    //Serial.println('Test');
+    //Serial.println(filtered_volt);
+
    // Als het nog niet 10x is opgeslagen
    if(i<10){
      
@@ -999,18 +1008,20 @@ int checkChange(){
       average = total / 10;   
       total = 0;
       
-      Serial.println(average);
+      //Serial.println(average);
       
-      if(average >= 20){
+      if(average >= 20 && !used_to_talk){
         
         Serial.println("#talking");
         talking_new = 1;
+        used_to_talk = 1;
         
-      } else if(average < 20) {
+      } else if(average < 20 && used_to_talk) {
         
         Serial.println("#nottalking");
         talking_new = 0;
-  
+        used_to_talk = 0;
+        
     }
     i = 0;
    }
